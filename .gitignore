@@ -223,3 +223,7 @@ Thumbs.db
 
 # Editores
 .idea/
+
+# Material de referencia y artefactos generados del proyecto
+notebooks/referencia.ipynb
+notebooks/reporte-perfilado.html

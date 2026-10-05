@@ -57,7 +57,8 @@ The notebook `notebooks/main.ipynb` documents the six phases:
 4. **Modeling** — class balancing (SMOTE), five classical models and three ensembles,
    tuned with cross-validation.
 5. **Evaluation** — quality metrics on the test set and best-model selection.
-6. **Deployment** — metric recommendations based on error cost in production.
+6. **Deployment** — metric recommendations based on error cost in production, and the
+   Streamlit app in `app.py` that applies them.
 
 > **Why PR-AUC and not accuracy?** With only 3% fraud, a trivial model reaches 97%
 > accuracy without detecting any fraud. The precision-recall curve accounts for the
@@ -66,11 +67,20 @@ The notebook `notebooks/main.ipynb` documents the six phases:
 ## Repository structure
 
 ```
+├── app.py                          # Streamlit app (deployment of the model)
+├── entrenar_modelo.py              # Trains the model and exports the artifacts
+├── preprocesamiento.py             # Feature engineering shared by training and app
 ├── content/
 │   └── credit-card-fraud.csv      # Dataset (5,000 transactions)
+├── modelos/                        # Artifacts consumed by the app
+│   ├── modelo_fraude.joblib       # Logistic regression (SMOTE)
+│   ├── preprocesador.joblib       # StandardScaler + OneHotEncoding
+│   ├── metadatos.joblib           # Medians, categories and test metrics
+│   └── plantilla_transacciones.xlsx
 ├── notebooks/
 │   └── main.ipynb                 # Complete CRISP-DM project
 ├── pyproject.toml                 # Dependencies (Poetry)
+├── requirements.txt               # Dependencies (pip, for the app)
 ├── trabajo-final.docx             # Course delivery document (Spanish)
 └── LICENSE
 ```
@@ -80,7 +90,7 @@ The notebook `notebooks/main.ipynb` documents the six phases:
 - Python 3.11–3.13
 - [Poetry](https://python-poetry.org/) (optional, see `pyproject.toml`)
 - Dependencies: `pandas`, `numpy`, `scikit-learn`, `imbalanced-learn`, `matplotlib`,
-  `seaborn`, `ydata-profiling`
+  `seaborn`, `ydata-profiling`, `streamlit`, `openpyxl`, `joblib`
 
 ## Usage
 
@@ -104,6 +114,43 @@ poetry run jupyter lab
 The loading cell uses the local path `../content/credit-card-fraud.csv` and, if the file
 does not exist, also downloads it from the repository.
 
+## App deployment (Streamlit)
+
+`app.py` deploys the final model: it receives a transaction and returns the probability of
+fraud and the decision (approve or block) taken at authorization time.
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Two input paths are available:
+
+- **Transacción individual** — form with the 13 model inputs (`V1`–`V10`, `Time`, `Amount`,
+  `MerchantCategory`), showing the processed features and, per transaction, the contribution
+  of each variable to the decision.
+- **Lote de transacciones** — Excel/CSV upload scored in batch. If the file includes the
+  `Class` column, the app reports recall, precision and the confusion matrix for that file.
+  A ready-to-use template is available for download inside the app.
+
+The sidebar exposes the metrics measured on the test set and the decision threshold, which
+trades recall against false positives.
+
+### Retraining the artifacts
+
+```bash
+poetry run python entrenar_modelo.py     # or: python entrenar_modelo.py
+```
+
+The script repeats the notebook pipeline (cleaning, `ColumnTransformer`, SMOTE,
+`GridSearchCV`) and writes `modelos/*.joblib`. At the end it reloads the artifacts from disk
+and verifies that they reproduce the test metrics of the notebook.
+
+> `preprocesamiento.py` is the single source of truth for feature engineering, so the app can
+> never diverge from training. `Amount` is always rebuilt from `Amount_log` when missing or
+> inconsistent, `V1`/`V3` are imputed with the training medians and their missing-value flags
+> are rebuilt from the input, and `Hora`/`Franja` are derived from `Time`.
+
 ## Tech stack
 
 - **scikit-learn** — models, `GridSearchCV`, `StratifiedKFold` and metrics
@@ -111,6 +158,7 @@ does not exist, also downloads it from the repository.
 - **pandas / numpy** — processing and analysis
 - **matplotlib / seaborn** — visualization
 - **ydata-profiling** — exploratory profiling
+- **Streamlit / joblib** — deployment of the model and its artifacts
 
 ## License
 

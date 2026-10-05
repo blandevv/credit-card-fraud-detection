@@ -31,12 +31,15 @@ RUTA_PLANTILLA = os.path.join(RUTA_MODELOS, 'plantilla_transacciones.xlsx')
 
 st.set_page_config(page_title='Detección de fraude con tarjeta de crédito', page_icon='💳', layout='wide')
 
+AUTORES = 'Jacobo Blandón Castro · Johan Antonio Peña López'
+
 st.title('Detección de fraude en transacciones con tarjeta de crédito')
 st.write(
     'Aplicación de despliegue del proyecto: recibe las variables de una transacción en el '
     'momento de la autorización y decide si debe **aprobarse** o **bloquearse**. El modelo es '
     'una regresión logística entrenada con el pipeline del notebook `notebooks/main.ipynb`.'
 )
+st.info(f'**Creado por {AUTORES}** — Proyecto final de Machine Learning, metodología CRISP-DM')
 
 
 # Cargar los artefactos del entrenamiento una sola vez
@@ -139,6 +142,9 @@ with st.sidebar:
     with st.expander('Variables que recibe el modelo'):
         st.write(f"{len(metadatos['numericas'])} numéricas + {len(metadatos['categoricas'])} categóricas")
         st.code('\n'.join(metadatos['requeridas']), language=None)
+
+    st.divider()
+    st.caption(f'Creado por {AUTORES}')
 
 tab_individual, tab_lote = st.tabs(['Transacción individual', 'Lote de transacciones'])
 
@@ -348,3 +354,9 @@ with tab_lote:
                 )
     else:
         st.info('Sube un archivo para comenzar.')
+
+st.divider()
+st.markdown(
+    f'**Creado por {AUTORES}**  \n'
+    'Proyecto final de Machine Learning · metodología CRISP-DM'
+)
